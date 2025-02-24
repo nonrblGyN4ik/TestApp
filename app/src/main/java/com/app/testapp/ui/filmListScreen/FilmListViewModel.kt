@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 class FilmListViewModel(
@@ -30,8 +31,13 @@ class FilmListViewModel(
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val searchFilms: StateFlow<PagingData<Film>> = searchQuery
         .debounce(500)
-        .filter { it.isNotBlank() }
-        .flatMapLatest { query -> filmRepository.searchFilms(query) }
+        .flatMapLatest { query ->
+            if(query.isBlank()) {
+                flowOf(PagingData.empty())
+            } else {
+                filmRepository.searchFilms(query)
+            }
+        }
         .cachedIn(viewModelScope)
         .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty())
 
