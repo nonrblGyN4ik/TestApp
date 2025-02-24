@@ -36,7 +36,7 @@ private object RetrofitModule {
         .addInterceptor { chain ->
             val original = chain.request()
             val requestBuilder = original.newBuilder()
-                .header("X-API-KEY", "e30ffed0-76ab-4dd6-b41f-4c9da2b2735b")
+                .header("X-API-KEY", "")
             val request = requestBuilder.build()
             chain.proceed(request)
         }
