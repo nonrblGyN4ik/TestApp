@@ -1,6 +1,5 @@
 package com.app.testapp.ui.filmDetailScreen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import com.app.testapp.ui.filmDetailScreen.models.FilmDetailsUi
 
 @OptIn(ExperimentalMaterial3Api::class)

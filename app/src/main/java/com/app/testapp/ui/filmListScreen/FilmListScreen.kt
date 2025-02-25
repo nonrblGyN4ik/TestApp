@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -30,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -93,122 +91,96 @@ fun FilmList(films: LazyPagingItems<Film>, onFilmClick: (Film) -> Unit) {
     val refreshState = films.loadState.refresh
     val isRefreshing = refreshState is LoadState.Loading && films.itemCount > 0
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    ContentWithPagingState(
+        modifier = Modifier.fillMaxSize(),
+        films = films
+    ) {
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = { films.refresh() }
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+
                 Text(
                     modifier = Modifier.padding(8.dp),
                     text = "Популярные фильмы",
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(films.itemCount, key = { films.peek(it)?.id ?: it }) {
-                        films[it]?.let { film ->
-                            FilmCard(film) {
-                                onFilmClick.invoke(film)
-                            }
-                        }
-                    }
-
-                    when (films.loadState.append) {
-                        is LoadState.Loading -> {
-                            item { LoadingItem() }
-                        }
-
-                        is LoadState.Error -> {
-                            item {
-                                ErrorAppendItem(
-                                    message = "Ошибка при загрузке",
-                                    onClick = {
-                                        films.retry()
-                                    }
-                                )
-                            }
-                        }
-
-                        else -> {}
-                    }
-                }
+                SimpleList(films, onFilmClick)
             }
-        }
-
-        if (refreshState is LoadState.Error && films.itemCount == 0) {
-            ErrorLoadData(modifier = Modifier.fillMaxSize()) { films.retry() }
-        }
-
-        if (refreshState is LoadState.Loading && films.itemCount == 0) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-
-        if (refreshState !is LoadState.Error && refreshState !is LoadState.Loading && films.itemCount == 0) {
-            EmptyListComponent(
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            )
         }
     }
 }
 
 @Composable
 fun SearchFilmList(films: LazyPagingItems<Film>, onFilmClick: (Film) -> Unit) {
-    val refreshState = films.loadState.refresh
-
-    Box(
+    ContentWithPagingState(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        films = films
     ) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(films.itemCount, key = { films.peek(it)?.id ?: it }) {
-                films[it]?.let { film ->
-                    FilmCard(film) {
-                        onFilmClick.invoke(film)
-                    }
-                }
+        SimpleList(films, onFilmClick)
+    }
+}
+
+@Composable
+fun ContentWithPagingState(
+    films: LazyPagingItems<Film>,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = modifier) {
+        content()
+        when (films.loadState.refresh) {
+            is LoadState.Loading -> if (films.itemCount == 0) {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
 
-            when (films.loadState.append) {
-                is LoadState.Loading -> {
-                    item { LoadingItem() }
-                }
-
-                is LoadState.Error -> {
-                    item {
-                        ErrorAppendItem(
-                            message = "Ошибка при загрузке",
-                            onClick = {
-                                films.retry()
-                            }
-                        )
-                    }
-                }
-
-                else -> {}
+            is LoadState.Error -> if (films.itemCount == 0) {
+                ErrorLoadData(Modifier.fillMaxSize()) { films.retry() }
             }
 
-            if (refreshState !is LoadState.Error && refreshState !is LoadState.Loading && films.itemCount == 0) {
+            else -> if (films.itemCount == 0) {
+                EmptyListComponent(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun SimpleList(films: LazyPagingItems<Film>, onFilmClick: (Film) -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(films.itemCount, key = { films.peek(it)?.id ?: it }) {
+            films[it]?.let { film ->
+                FilmCard(film) {
+                    onFilmClick.invoke(film)
+                }
+            }
+        }
+
+        when (films.loadState.append) {
+            is LoadState.Loading -> {
+                item { LoadingItem() }
+            }
+
+            is LoadState.Error -> {
                 item {
-                    EmptyListComponent(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                    ErrorAppendItem(
+                        message = "Ошибка при загрузке",
+                        onClick = {
+                            films.retry()
+                        }
                     )
                 }
             }
-        }
 
-        if (refreshState is LoadState.Error && films.itemCount == 0) {
-            ErrorLoadData(modifier = Modifier.fillMaxSize()) { films.retry() }
+            else -> {}
         }
-
-        if (refreshState is LoadState.Loading && films.itemCount == 0) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-
     }
 }
 
@@ -249,7 +221,7 @@ private fun EmptyListComponent(modifier: Modifier) {
 }
 
 @Composable
-fun LoadingItem() {
+private fun LoadingItem() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -261,7 +233,7 @@ fun LoadingItem() {
 }
 
 @Composable
-fun ErrorAppendItem(message: String, onClick: () -> Unit) {
+private fun ErrorAppendItem(message: String, onClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
