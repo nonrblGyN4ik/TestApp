@@ -26,7 +26,7 @@ class FilmListViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val films = filmRepository.loadFilms()
+    val films = filmRepository.loadFilms().cachedIn(viewModelScope)
 
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val searchFilms: StateFlow<PagingData<Film>> = searchQuery
